@@ -24,6 +24,8 @@ source-repository head
 
 library
   exposed-modules:
+      Config
+      Init
       Lib
   other-modules:
       Paths_haskell_pet_project
@@ -44,6 +46,7 @@ library
     , servant
     , servant-client
     , servant-server
+    , time
     , transformers >=0.4
     , wai
     , warp
@@ -52,8 +55,6 @@ library
 executable haskell-pet-project-exe
   main-is: Main.hs
   other-modules:
-      Config
-      UserDB
       Paths_haskell_pet_project
   hs-source-dirs:
       app
@@ -74,6 +75,7 @@ executable haskell-pet-project-exe
     , servant
     , servant-client
     , servant-server
+    , time
     , transformers >=0.4
     , wai
     , warp
@@ -106,6 +108,7 @@ test-suite haskell-pet-project-test
     , servant
     , servant-client
     , servant-server
+    , time
     , transformers >=0.4
     , wai
     , warp

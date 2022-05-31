@@ -37,6 +37,7 @@ dependencies:
 - monad-logger
 - mtl
 - HDBC
+- time
 
 library:
   source-dirs: src

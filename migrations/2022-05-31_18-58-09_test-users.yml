@@ -1,0 +1,8 @@
+Description: (Describe migration here.)
+Created: 2022-05-31 18:58:21.785392073 UTC
+Depends: 2022-05-31_18-07-51_users-table
+Apply: |
+  INSERT INTO users (created_at, username, password, email) VAlUES ('2022-05-31 18:58:21.785392073 UTC', 'user1', 'password1', 'user1@gmail.com');
+  INSERT INTO users (created_at, username, password, email) VAlUES ('2022-05-31 18:58:21.785392073 UTC', 'user2', 'password2', 'user2@gmail.com');
+Revert: |
+  Drop Table users;

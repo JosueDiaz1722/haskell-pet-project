@@ -7,7 +7,7 @@ Apply: |
     created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
     username    VARCHAR NOT NULL,
     password    VARCHAR NOT NULL,
-    email       VARCHAR NOT NULL
+    email       VARCHAR UNIQUE NOT NULL
   )
 Revert: |
   DROP TABLE users

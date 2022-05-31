@@ -11,6 +11,7 @@ import Database.PostgreSQL.Simple
 import Data.ByteString
 import Data.Pool
 import Control.Exception (bracket)
+import System.Environment (getEnv)
 
 newtype AppT m a = AppT {
     runApp :: ReaderT Config (ExceptT ServerError m) a
@@ -27,10 +28,19 @@ defaultConfig = Config
 connStr :: DBConnectionString
 connStr = "host=localhost dbname=test user=postgres password=password port=5432"
 
-initConnectionPool :: DBConnectionString -> IO (Pool Connection)
-initConnectionPool connStr =
-  createPool (connectPostgreSQL connStr)
-             close
-             2 -- stripes
-             60 -- unused connections are kept open for a minute
-             10 -- max. 10 connections open per stripe
+configPG :: ConnectInfo
+configPG = ConnectInfo
+    { connectHost     = "localhost" -- .env
+    , connectDatabase = "test" -- .env
+    , connectUser     = "testuser" -- .env
+    , connectPassword = "password" -- .env
+    , connectPort     = 5432 -- .env
+    }
+
+initConnectPool :: ConnectInfo -> IO (Pool Connection)
+initConnectPool connInfo = do
+    createPool (connect connInfo)
+                close
+                1
+                60
+                1

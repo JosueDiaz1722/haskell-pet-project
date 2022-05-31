@@ -23,17 +23,22 @@ import Network.Wai
 import Network.Wai.Handler.Warp 
 import Servant
 import GHC.Generics
-
+import Data.Time (UTCTime)
 
 -- Postgresql Requires
-import Database.PostgreSQL.Simple
+import Database.PostgreSQL.Simple as Pg
 import Control.Arrow hiding (app)
 import Control.Monad.IO.Class
+import Database.PostgreSQL.Simple.FromRow
+import Database.PostgreSQL.Simple.ToRow
+import Database.PostgreSQL.Simple.ToField (ToField(toField))
+import Control.Monad
 
 -- USER TYPE
 
 data User = User
-  { username      :: String
+  { userCreatedAt :: UTCTime 
+  , username      :: String
   , password      :: String
   , email         :: String
   } deriving (Eq, Show, Generic)
@@ -41,31 +46,48 @@ instance ToJSON User
 instance FromJSON User
 
 
-toUsers :: [( String, String, String)] -> [User]
-toUsers = map(\(username, password, email) -> User username password email)
+toUsers :: [( UTCTime, String, String, String)] -> [User]
+toUsers = map(\(userCreatedAt, username, password, email) -> User userCreatedAt username password email)
 
 -- Endpoints
 
 type UserAPI = "users" :> Get '[JSON][User]
-  :<|> "users" :> Capture "name" [Char] :> Get '[JSON] [User]
-  :<|> "users" :> ReqBody '[JSON] User :> Post '[JSON] User
-  :<|> "users" :> "update" :>  ReqBody '[JSON] User :> Post '[JSON] User
-  :<|> "users" :> "delete" :>  ReqBody '[JSON] User :> Post '[JSON] User
+  -- :<|> "users" :> Capture "name" [Char] :> Get '[JSON] [User]
+  -- :<|> "users" :> ReqBody '[JSON] User :> Post '[JSON] User
+  -- :<|> "users" :> "update" :>  ReqBody '[JSON] User :> Post '[JSON] User
+  -- :<|> "users" :> "delete" :>  ReqBody '[JSON] User :> Post '[JSON] User
 
 
 -- ACTIONS FOR ENDPOINT
+api :: Proxy UserAPI
+api = Proxy
 
--- server :: Connection -> Server UserAPI
--- server conn = fetchAll :<|> fetch :<|> update :<|> delete 
+server :: Pool Connection -> Server UserAPI
+server conns = fetchAll
 
-
+  where fetchAll :: Handler [User]
+        fetchAll = liftIO $ getAllUsers conns
 -- DB Manipulation
 
+instance Pg.FromRow User where
+  fromRow = User
+    <$> field
+    <*> field
+    <*> field
+    <*> field
 
-type DBConnectionString = ByteString
+instance Pg.ToRow User where
+  toRow t = 
+    [ toField (userCreatedAt t)
+    , toField (username t)
+    , toField (password t)
+    , toField (email t)
+    ]
 
-initDB2 :: DBConnectionString -> IO ()
-initDB2 connstr = bracket (connectPostgreSQL connstr) close $ \conn -> do
-  execute_ conn
-    "CREATE TABLE IF NOT EXISTS users (userId integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, username VARCHAR( 50 ) UNIQUE NOT NULL, password VARCHAR ( 50 ) NOT NULL, email VARCHAR ( 255 ) UNIQUE NOT NULL)"
-  return ()
+getAllUsers :: Pool Pg.Connection -> IO [User]
+getAllUsers pool =
+  withResource pool $ \conn -> 
+  Pg.query_ conn "SELECT created_at, username, password, email FROM users"
+
+runApp :: Pool Connection -> IO ()
+runApp conns = run 8080 (serve api $ server conns)

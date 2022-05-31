@@ -8,7 +8,14 @@ import Network.HTTP.Client (newManager)
 import Network.HTTP.Client (defaultManagerSettings)
 import Servant.Client
 import Control.Concurrent
+import Config (configPG, initConnectPool)
+import Lib (runApp)
+import Control.Monad
 
 
 main :: IO ()
-main = print("Hello")
+main = do
+    conn <- initConnectPool configPG 
+    runApp conn
+    -- -- users <- getAllUsers conn
+    -- -- forM_ users print

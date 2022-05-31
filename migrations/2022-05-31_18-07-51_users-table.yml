@@ -1,0 +1,13 @@
+Description: (Describe migration here.)
+Created: 2022-05-31 18:07:52.654385705 UTC
+Depends: 
+Apply: |
+  CREATE TABLE users (
+    id          SERIAL PRIMARY KEY,
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
+    username    VARCHAR NOT NULL,
+    password    VARCHAR NOT NULL,
+    email       VARCHAR NOT NULL
+  )
+Revert: |
+  DROP TABLE users

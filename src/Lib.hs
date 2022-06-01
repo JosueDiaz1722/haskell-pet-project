@@ -33,6 +33,8 @@ import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.ToRow
 import Database.PostgreSQL.Simple.ToField (ToField(toField))
 import Control.Monad
+import qualified Database.PostgreSQL.Simple as PG
+import Data.Aeson.Encoding (string)
 
 -- USER TYPE
 
@@ -52,7 +54,7 @@ toUsers = map(\(userCreatedAt, username, password, email) -> User userCreatedAt 
 -- Endpoints
 
 type UserAPI = "users" :> Get '[JSON][User]
-  -- :<|> "users" :> Capture "name" [Char] :> Get '[JSON] [User]
+  :<|> "users" :> Capture "email" String :> Get '[JSON] [User] -- GET users/"email"
   -- :<|> "users" :> ReqBody '[JSON] User :> Post '[JSON] User
   -- :<|> "users" :> "update" :>  ReqBody '[JSON] User :> Post '[JSON] User
   -- :<|> "users" :> "delete" :>  ReqBody '[JSON] User :> Post '[JSON] User
@@ -63,10 +65,13 @@ api :: Proxy UserAPI
 api = Proxy
 
 server :: Pool Connection -> Server UserAPI
-server conns = fetchAll
+server conns = fetchAll :<|> fetchUser
 
   where fetchAll :: Handler [User]
         fetchAll = liftIO $ getAllUsers conns
+        
+        fetchUser :: String -> Handler [User]
+        fetchUser email = liftIO $ getUser conns email
 -- DB Manipulation
 
 instance Pg.FromRow User where
@@ -88,6 +93,12 @@ getAllUsers :: Pool Pg.Connection -> IO [User]
 getAllUsers pool =
   withResource pool $ \conn -> 
   Pg.query_ conn "SELECT created_at, username, password, email FROM users"
+
+
+getUser :: Pool Connection -> String -> IO [User]
+getUser pool email = do
+  withResource pool $ \conn ->
+    Pg.query conn "SELECT created_at, username, password, email FROM users where email = ?" (Only (email :: String))
 
 runApp :: Pool Connection -> IO ()
 runApp conns = run 8080 (serve api $ server conns)

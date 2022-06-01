@@ -17,5 +17,3 @@ main :: IO ()
 main = do
     conn <- initConnectPool configPG 
     runApp conn
-    -- -- users <- getAllUsers conn
-    -- -- forM_ users print
